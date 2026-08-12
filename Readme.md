@@ -68,9 +68,9 @@ Every waste batch is **digitally verifiable** at each stage.
 ---
 
 ## 🔁 Waste Lifecycle
-
+```
 Facility → QR Generation → Collection → Disposal → Civic Audit
-
+```
 ---
 
 ## 🧱 Tech Stack
@@ -93,7 +93,7 @@ Facility → QR Generation → Collection → Disposal → Civic Audit
 ---
 
 ## 📂 Project Structure
-
+```
 app/  
 ├── routes/  
 ├── models/  
@@ -103,20 +103,21 @@ app/
 └──___init___.py
 
 main.py   <- Entry Point
-
+```
 ---
 
 🔑 Demo Login Credentials (For Evaluation)
 
 Use the following dummy accounts to explore different roles in the system:
-
+```
 password : admin (common for all)
-
-Facility -> facility@mail.com \
-Collector -> collector@mail.com \
-Disposal Unit -> disposal@mail.com\
+```
+```
+Facility -> facility@mail.com 
+Collector -> collector@mail.com 
+Disposal Unit -> disposal@mail.com
 Civic Authority -> civic@mail.com
-
+```
 ⚠️ These accounts are for demonstration purposes only.
 
 ### 🗺️ Mock Data & Heatmap Note
