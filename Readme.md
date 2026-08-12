@@ -137,8 +137,8 @@ This is intentional for the hackathon prototype to:
 CivicBio is designed as a **governance-first prototype**, emphasizing real-world applicability, regulatory compliance, and traceability.
 
 ### UPDATES
-
+```
 1.0 : Previous Versions focused for prototype
 2.0 : New UI with Bootstraps
-
+```
 ---
