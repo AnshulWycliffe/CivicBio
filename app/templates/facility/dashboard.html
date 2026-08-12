@@ -1,573 +1,414 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{current_user.details['facility_name']}} Dashboard | CivicBio</title>
+{% extends 'base.html' %}
 
-    <!-- Bootstrap CSS -->
-    <link
-      href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css"
-      rel="stylesheet"
-    >
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+{% block title %}{{current_user.details['facility_name']}} Dashboard | CivicCycle{% endblock %}
 
-    <style>
-        @media print {
-        body * {
-            visibility: hidden;
-        }
-        .modal-content, .modal-content * {
-            visibility: visible;
-        }
-        .modal-dialog {
-            max-width: 300px;
-        }
-        }
-    </style>
+{% block sidebar_nav %}
+<a href="{{ url_for('facility.dashboard') }}" class="nav-link active"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+<a href="{{ url_for('facility.profile_setup') }}" class="nav-link"><i class="fa-solid fa-building"></i> Profile</a>
+{% endblock %}
 
-</head>
+{% block extra_head %}
+<style>
+    @media print {
+        body * { visibility: hidden; }
+        .modal-content, .modal-content * { visibility: visible; }
+        .modal-dialog { max-width: 300px; }
+    }
+</style>
+{% endblock %}
 
-
-<body class="bg-light">
-
-<!-- Header -->
-<nav class="navbar navbar-dark bg-success sticky-top">
-    <div class="container-fluid ">
-        <span class="navbar-brand mb-0 h6">CivicBio · {{current_user.details['facility_name']}}</span>
-        <button class="btn btn-sm btn-outline-light"
-                        data-bs-toggle="modal"
-                        data-bs-target="#profileModal">
-                    <i class="fas fa-user"></i>
-        </button>
-        <a class="btn btn-sm btn-outline-light" href="/auth/logout">Logout</a>
-    </div>
-</nav>
-
-<!-- Main -->
-<div class="container my-3">
-
-    <!-- Summary Cards -->
-    <div class="row g-2 mb-3">
-        <div class="col-6">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h6 class="text-muted">Waste Today</h6>
-                    <h4>{{waste_today}} kg</h4>
-                </div>
-            </div>
+{% block content %}
+<div class="container-fluid">
+    <!-- Hero Banner -->
+    <div class="dashboard-hero d-flex align-items-center justify-content-between">
+        <div>
+            <h3 class="fw-bold mb-1">Welcome back, {{ current_user.details.get('facility_name', 'Facility') }}</h3>
+            <p class="mb-0 text-white-50 small"><i class="fa-solid fa-hospital me-1"></i> {{ current_user.details.get('facility_type', 'Medical Facility') }} • Registration ID: {{ current_user.details.get('registration_id', 'N/A') }}</p>
         </div>
-        <div class="col-6">
-            <div class="card text-center">
-                <div class="card-body">
-                    <h6 class="text-muted">Pending Pickup</h6>
-                    <h4>{{pending_pickup}}</h4>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <!-- Alerts -->
-    <div class="alert alert-warning mb-3">
-        ⚠ Pickup pending for today’s waste. Please ensure handover before deadline.
-    </div>
-
-    <!-- Quick Actions -->
-    <div class="card mb-3">
-        <div class="card-body">
-            <h6 class="mb-3">Quick Actions</h6>
-            <div class="d-grid gap-2">
-                <button class="btn btn-success w-100"
-                        data-bs-toggle="modal"
-                        data-bs-target="#generateWasteModal">
-                    <i class="fa-solid fa-trash-can"></i> Generate Waste
-                </button>
-                
-                <button class="btn btn-success"
-                        data-bs-toggle="modal"
-                        data-bs-target="#qrModal">
-                    <i class="fa-solid fa-qrcode"></i> Show QR Code
-                </button>
-
-            </div>
-        </div>
-    </div>
-
-    <div class="card mb-3">
-        <div class="card-body">
-            <h6 class="mb-3">Compliance Status</h6>
-
-            <!-- Overall Status -->
-            <div class="alert alert-success">
-                ✅ Facility is compliant as per Biomedical Waste Rules
-            </div>
-
-            <!-- Compliance Items -->
-            <ul class="list-group mb-3">
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    Waste Handover Timeliness
-                    <span class="badge bg-success">Compliant</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    Disposal Confirmation
-                    <span class="badge bg-success">Verified</span>
-                </li>
-                <li class="list-group-item d-flex justify-content-between align-items-center">
-                    Storage Duration
-                    <span class="badge bg-warning text-dark">Attention</span>
-                </li>
-            </ul>
-
-            <button class="btn btn-outline-primary w-100"
-                    data-bs-toggle="modal"
-                    data-bs-target="#complianceModal">
-                View Compliance Details
+        <div class="d-none d-md-block">
+            <button class="btn btn-light fw-bold text-success shadow-sm px-3 py-2" data-bs-toggle="modal" data-bs-target="#generateWasteModal">
+                <i class="fa-solid fa-plus-circle me-1"></i> Register New Waste
             </button>
         </div>
     </div>
 
+    <!-- Summary KPI Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-xl-3 col-md-6">
+            <div class="civic-card">
+                <div class="stat-card">
+                    <div class="stat-icon icon-emerald">
+                        <i class="fa-solid fa-weight-hanging"></i>
+                    </div>
+                    <div>
+                        <div class="stat-label">Waste Generated Today</div>
+                        <div class="stat-value">{{ waste_today }} <span class="fs-6 text-muted fw-normal">kg</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="civic-card">
+                <div class="stat-card">
+                    <div class="stat-icon icon-amber">
+                        <i class="fa-solid fa-clock"></i>
+                    </div>
+                    <div>
+                        <div class="stat-label">Pending Pickups</div>
+                        <div class="stat-value">{{ pending_pickup }} <span class="fs-6 text-muted fw-normal">batches</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="civic-card">
+                <div class="stat-card">
+                    <div class="stat-icon icon-blue">
+                        <i class="fa-solid fa-shield-check"></i>
+                    </div>
+                    <div>
+                        <div class="stat-label">Compliance Status</div>
+                        <div class="fs-5 fw-bold text-success mt-1"><i class="fa-solid fa-circle-check me-1"></i> Verified</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-xl-3 col-md-6">
+            <div class="civic-card">
+                <div class="stat-card">
+                    <div class="stat-icon icon-purple">
+                        <i class="fa-solid fa-qrcode"></i>
+                    </div>
+                    <div>
+                        <div class="stat-label">Facility QR Code</div>
+                        <button class="btn btn-sm btn-outline-primary mt-1 py-1 px-2 fw-semibold" data-bs-toggle="modal" data-bs-target="#qrModal">
+                            <i class="fa-solid fa-eye me-1"></i> View Code
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
 
-    <!-- Generate Waste Modal -->
-    <div class="modal fade" id="generateWasteModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
-            <div class="modal-content">
+    <!-- Alert Bar -->
+    {% if pending_pickup > 0 %}
+    <div class="alert alert-warning mb-4 shadow-sm border-0 d-flex align-items-center rounded-3 p-3">
+        <i class="fa-solid fa-triangle-exclamation fs-4 me-3 text-warning"></i>
+        <div>
+            <strong class="d-block mb-1">Pickup Pending Notice</strong>
+            <span class="small text-secondary">You have waste batches awaiting collector pickup. Please ensure proper color segregation in designated storage bins.</span>
+        </div>
+    </div>
+    {% endif %}
 
-            <!-- Modal Header -->
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">Generate Biomedical Waste</h5>
+    <div class="row g-4">
+        <!-- Quick Actions & Compliance Column -->
+        <div class="col-lg-4">
+            <div class="civic-card mb-4">
+                <div class="card-body p-4">
+                    <h6 class="text-uppercase fw-bold text-secondary fs-7 tracking-wider mb-3">Quick Actions</h6>
+                    <div class="d-grid gap-3">
+                        <button class="btn action-btn-primary py-2.5 px-3 rounded-3 d-flex align-items-center justify-content-center gap-2"
+                                data-bs-toggle="modal" data-bs-target="#generateWasteModal">
+                            <i class="fa-solid fa-trash-can fs-5"></i>
+                            <span>Register Waste Batch</span>
+                        </button>
+                        <button class="btn btn-outline-success py-2.5 px-3 rounded-3 d-flex align-items-center justify-content-center gap-2 fw-semibold"
+                                data-bs-toggle="modal" data-bs-target="#qrModal">
+                            <i class="fa-solid fa-qrcode fs-5"></i>
+                            <span>Facility QR Code</span>
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="civic-card">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <h6 class="text-uppercase fw-bold text-secondary fs-7 tracking-wider mb-0">Compliance Score</h6>
+                        <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-2.5 py-1 fw-bold">98% High</span>
+                    </div>
+                    <ul class="list-group list-group-flush mb-3 small">
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 border-light">
+                            <span><i class="fa-solid fa-circle-check text-success me-2"></i> Segregation Standard</span>
+                            <span class="status-badge bg-success">Passed</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 border-light">
+                            <span><i class="fa-solid fa-circle-check text-success me-2"></i> Timely Handover</span>
+                            <span class="status-badge bg-success">Passed</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center px-0 py-2 border-light">
+                            <span><i class="fa-solid fa-clock-rotate-left text-warning me-2"></i> Storage Duration</span>
+                            <span class="status-badge bg-warning">Attention</span>
+                        </li>
+                    </ul>
+                    <button class="btn btn-light w-100 text-primary fw-semibold rounded-3 py-2 small" data-bs-toggle="modal" data-bs-target="#complianceModal">
+                        View Detailed Audit
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Records Table Column -->
+        <div class="col-lg-8">
+            <div class="civic-card">
+                <div class="card-body p-4">
+                    <div class="d-flex align-items-center justify-content-between mb-3">
+                        <div>
+                            <h6 class="text-uppercase fw-bold text-secondary fs-7 tracking-wider mb-1">Recent Waste Batches</h6>
+                            <p class="text-muted small mb-0">Latest waste registrations and pickup status</p>
+                        </div>
+                    </div>
+
+                    <div class="table-responsive">
+                        <table class="table table-custom align-middle mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Category</th>
+                                    <th>Quantity</th>
+                                    <th>Generated At</th>
+                                    <th>Status</th>
+                                    <th class="text-end">Action</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for i in recent_waste %}
+                                <tr>
+                                    <td>
+                                        <div class="fw-bold text-dark">{{ i.category }}</div>
+                                        {% if i.storage_location %}<div class="small text-muted"><i class="fa-solid fa-location-dot me-1"></i>{{ i.storage_location }}</div>{% endif %}
+                                    </td>
+                                    <td><span class="fw-bold">{{ i.quantity }}</span> <span class="small text-muted">kg</span></td>
+                                    <td class="text-muted small">{{ i.created_at | to_ist | datetime_format('%Y-%m-%d %I:%M %p') }}</td>
+                                    <td>
+                                        <span class="status-badge 
+                                            {% if i.status|lower == 'pending' or i.status|lower == 'created' %}bg-warning
+                                            {% elif i.status|lower == 'collected' or i.status|lower == 'in_transit' %}bg-info
+                                            {% elif i.status|lower == 'disposed' or i.status|lower == 'recycled' %}bg-success
+                                            {% else %}bg-secondary{% endif %}">
+                                            {{ i.status|capitalize }}
+                                        </span>
+                                    </td>
+                                    <td class="text-end">
+                                        {% if i.status|lower == "pending" or i.status|lower == "created" %}
+                                        <button class="btn btn-sm btn-light text-primary rounded-circle shadow-sm" style="width:36px;height:36px;" title="Print QR"
+                                                onclick="openWasteQRCode('{{ i.id }}','{{ i.category }}', '{{ i.quantity }}')">
+                                            <i class="fa-solid fa-qrcode"></i>
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                                {% if not recent_waste %}
+                                <tr>
+                                    <td colspan="5" class="text-center py-5 text-muted">
+                                        <i class="fa-solid fa-box-open fs-1 text-light-emphasis mb-2"></i>
+                                        <p class="mb-0 fw-medium">No waste batches registered yet.</p>
+                                        <small class="text-muted">Click "Register Waste Batch" above to add your first entry.</small>
+                                    </td>
+                                </tr>
+                                {% endif %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modals -->
+<!-- Generate Waste Modal -->
+<div class="modal fade" id="generateWasteModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-success text-white border-0 py-3">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-plus-circle me-2"></i> Register Waste Batch</h5>
                 <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
             </div>
-
-            <!-- Modal Body -->
-            <div class="modal-body">
-
+            <div class="modal-body p-4">
                 <form>
-
-                <!-- Waste Category -->
-                <div class="mb-3">
-                    <label class="form-label">Waste Category</label>
-                    <select class="form-select" id="wasteCategory" required>
-                    <option value="" disabled selected>Select category</option>
-                    {% if "yellow" in current_user.details['waste_categories'] %}
-                    <option value="YELLOW">Yellow (Infectious)</option>
-                    {% endif %}
-                    {% if "red" in current_user.details['waste_categories'] %}
-                    <option value="RED">Red (Contaminated Plastic)</option>
-                    {% endif %}
-                    {% if "blue" in current_user.details['waste_categories'] %}
-                    <option value="BLUE">Blue (Glassware)</option>
-                    {% endif %}
-                    {% if "white" in current_user.details['waste_categories'] %}
-                    <option value="WHITE">White (Sharps)</option>
-                    {% endif %}
-                    </select>
-                </div>
-
-                <!-- Quantity -->
-                <div class="mb-3">
-                    <label class="form-label">Quantity (kg)</label>
-                    <input type="number"
-                        class="form-control"
-                        id="wasteQuantity"
-                        placeholder="Enter weight"
-                        min="0.1"
-                        step="0.1"
-                        required>
-                </div>
-
-                <!-- Storage Location -->
-                <div class="mb-3">
-                    <label class="form-label">Temporary Storage Location</label>
-                    <input type="text"
-                        class="form-control"
-                        placeholder="e.g. Bio-waste room"
-                        id="storageLocation"
-                        required>
-                </div>
-
-                <!-- Note -->
-                <div class="alert alert-warning small">
-                    ⚠ Biomedical waste must be handed over within prescribed time limits.
-                </div>
-
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Waste Category</label>
+                        <select class="form-select bg-light border-0 py-2.5" id="wasteCategory" required>
+                            <option value="" disabled selected>Select waste category</option>
+                            {% for cat in current_user.details.get('waste_categories', []) %}
+                            <option value="{{cat|upper}}">{{cat|title}}</option>
+                            {% endfor %}
+                            <option value="YELLOW">Yellow (Infectious Waste)</option>
+                            <option value="RED">Red (Contaminated Plastic)</option>
+                            <option value="BLUE">Blue (Glassware & Medicine Vials)</option>
+                            <option value="WHITE">White (Translucent Sharps)</option>
+                            <option value="GENERAL">General Municipal Waste</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-semibold">Quantity (kg)</label>
+                        <input type="number" class="form-control bg-light border-0 py-2.5" id="wasteQuantity" placeholder="e.g. 12.5"
+                            min="0.1" step="0.1" required>
+                    </div>
+                    <div class="mb-4">
+                        <label class="form-label fw-semibold">Temporary Storage Location</label>
+                        <input type="text" class="form-control bg-light border-0 py-2.5" placeholder="e.g. Storage Bay A, Bin 2" id="storageLocation"
+                            required>
+                    </div>
+                    <div class="d-grid gap-2">
+                        <button type="button" class="btn action-btn-primary py-2.5 fw-bold rounded-3" id="submitWasteBtn">Register Batch & Generate QR</button>
+                        <button type="button" class="btn btn-light text-secondary border-0" data-bs-dismiss="modal">Cancel</button>
+                    </div>
                 </form>
-
-            </div>
-
-            <!-- Modal Footer -->
-            <div class="modal-footer">
-                <button type="button"
-                        class="btn btn-secondary"
-                        data-bs-dismiss="modal">
-                Cancel
-                </button>
-                <button type="button"
-                        class="btn btn-success"
-                        id="submitWasteBtn">
-                Submit Waste
-                </button>
-            </div>
-
             </div>
         </div>
     </div>
-    
-    <!-- Compliance Modal -->
-    <div class="modal fade" id="complianceModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
-        <div class="modal-content">
-
-        <!-- Header -->
-        <div class="modal-header bg-primary text-white">
-            <h5 class="modal-title">Compliance Details</h5>
-            <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-        </div>
-
-        <!-- Body -->
-        <div class="modal-body">
-
-            <h6>Facility Information</h6>
-            <p class="mb-1"><strong>Facility:</strong> {{current_user.details['facility_name']}}</p>
-            <p class="mb-1"><strong>Registration ID:</strong> {{current_user.details['registration_id']}}</p>
-            <p class="mb-3"><strong>Status:</strong> <span class="badge bg-success">Active</span></p>
-
-            <hr>
-
-            <h6>Compliance Checks</h6>
-
-            <ul class="list-group mb-3">
-                <li class="list-group-item">
-                    ✔ Waste handed over within prescribed time
-                </li>
-                <li class="list-group-item">
-                    ✔ Authorized collector used
-                </li>
-                <li class="list-group-item">
-                    ✔ Disposal confirmation received
-                </li>
-                <li class="list-group-item text-warning">
-                    ⚠ Storage duration nearing limit (Action required)
-                </li>
-            </ul>
-
-            <hr>
-
-            <h6>Regulatory Reference</h6>
-            <p class="small text-muted">
-                This facility complies with Biomedical Waste Management Rules, 2016,
-                issued by CPCB & State Pollution Control Board.
-            </p>
-
-        </div>
-
-        <!-- Footer -->
-        <div class="modal-footer">
-            <button class="btn btn-secondary" data-bs-dismiss="modal">
-                Close
-            </button>
-            <button class="btn btn-primary">
-                Download Compliance Report
-            </button>
-        </div>
-
-        </div>
-    </div>
-    </div>
-
-    <!-- Facility Profile Modal -->
-    <div class="modal fade" id="profileModal" tabindex="-1">
-        <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
-            <div class="modal-content">
-
-            <!-- Header -->
-            <div class="modal-header bg-success text-white">
-                <h5 class="modal-title">Facility Profile</h5>
-                <button type="button"
-                        class="btn-close btn-close-white"
-                        data-bs-dismiss="modal"></button>
-            </div>
-
-            <!-- Body -->
-            <div class="modal-body">
-
-                <!-- Hospital Details -->
-                <h6 class="mb-2">Hospital / Facility Details</h6>
-                <p class="mb-1"><strong>Name:</strong> {{current_user.details['facility_name']}}</p>
-                <p class="mb-1"><strong>Type:</strong> {{current_user.details['facility_type']}}</p>
-                <p class="mb-1"><strong>Registration ID:</strong> {{current_user.details['registration_id']}}</p>
-                <p class="mb-3">
-                    <strong>Status:</strong>
-                    {% if current_user.status == "ACTIVE" %}
-                        <span class="badge bg-success">Approved</span>
-                    {% else %}
-                        <span class="badge bg-warning text-dark">Pending Approval</span>
-                    {% endif %}
-                </p>
-
-                <hr>
-
-                <!-- Address -->
-                <h6 class="mb-2">Address</h6>
-                <p class="mb-1">{{current_user.details['address']}}</p>
-                <p class="mb-1">{{current_user.details['city']}}, {{current_user.details['state']}}</p>
-                <p class="mb-3">{{current_user.details['pincode']}}</p>
-
-                <hr>
-
-                <!-- License Information -->
-                <h6 class="mb-2">License Information</h6>
-                <p class="mb-1"><strong>License No:</strong> {{current_user.details['license_no']}}</p>
-                <p class="mb-1"><strong>Issued By:</strong> State Pollution Control Board</p>
-                <p class="mb-3"><strong>Valid Till:</strong> 31 Dec 2026</p>
-
-                <hr>
-
-                <!-- Waste Authorization -->
-                <h6 class="mb-2">Authorized Waste Categories</h6>
-                <div class="d-flex flex-wrap gap-2 mb-3">
-                    {% if "yellow" in current_user.details['waste_categories'] %}
-                    <span class="badge bg-warning text-dark">Yellow</span>
-                    {% endif %}
-                    {% if "red" in current_user.details['waste_categories'] %}
-                    <span class="badge bg-danger">Red</span>
-                    {% endif %}
-                    {% if "blue" in current_user.details['waste_categories'] %}
-                    <span class="badge bg-info">Blue</span>
-                    {% endif %}
-                    {% if "white" in current_user.details['waste_categories'] %}
-                    <span class="badge bg-secondary">White</span>
-                    {% endif %}
-                </div>
-
-                <hr>
-
-                <!-- Capacity -->
-                <h6 class="mb-2">Waste Capacity</h6>
-                <p class="mb-1"><strong>Max Capacity:</strong> {{current_user.details['max_capacity']}}</p>
-
-                <hr>
-
-                <!-- Civic Authority -->
-                <h6 class="mb-2">Civic Authority</h6>
-                <p class="mb-1"><strong>Approved By:</strong> Raipur Municipal Corporation</p>
-                <p class="mb-1"><strong>Approval Date:</strong> 15 Jan 2026</p>
-
-            </div>
-
-            </div>
-        </div>
-    </div>
-
-    <!-- QR Code Modal -->
-    <div class="modal fade" id="qrModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content">
-
-        <!-- Header -->
-        <div class="modal-header bg-dark text-white">
-            <h6 class="modal-title">Facility QR Code</h6>
-            <button type="button"
-                    class="btn-close btn-close-white"
-                    data-bs-dismiss="modal"></button>
-        </div>
-
-        <!-- Body -->
-        <div class="modal-body text-center">
-
-            <!-- QR Image (Static for Prototype) -->
-            <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=FACILITY:{{ current_user.id }}"
-            alt="Facility QR Code"
-            class="img-fluid mb-3">
-
-            <p class="mb-1"><strong>Facility:</strong> {{current_user.details['facility_name']}}</p>
-            <p class="mb-1"><strong>Registration ID:</strong> {{current_user.details['registration_id']}}</p>
-
-            <small class="text-muted">
-                Scan this QR to verify facility authorization and waste records.
-            </small>
-
-        </div>
-
-        <!-- Footer -->
-        <div class="modal-footer">
-            <button class="btn btn-secondary w-100"
-                    data-bs-dismiss="modal">
-                Close
-            </button>
-        </div>
-
-        </div>
-    </div>
-    </div>
-
-    <!-- Waste QR Modal -->
-    <div class="modal fade" id="wasteQrModal" tabindex="-1">
-    <div class="modal-dialog modal-dialog-centered modal-sm">
-        <div class="modal-content">
-
-        <div class="modal-header bg-dark text-white">
-            <h6 class="modal-title">Waste Batch QR</h6>
-            <button class="btn-close btn-close-white"
-                    data-bs-dismiss="modal"></button>
-        </div>
-
-        <div class="modal-body text-center">
-
-            <!-- Waste QR -->
-            <img
-            id="wasteQrImage"
-            class="img-fluid mb-3"
-            alt="Waste QR Code"
-            >
-            
-            <div id="wasteQrDetails"></div>
-
-            <small class="text-muted">
-                Paste this QR on the waste bag for tracking.
-            </small>
-
-        </div>
-
-        <div class="modal-footer">
-            <button class="btn btn-outline-primary w-100"
-                    onclick="window.print()">
-                🖨️ Print QR Label
-            </button>
-        </div>
-
-        </div>
-    </div>
-    </div>
-
-
-    <!-- Recent Waste Records -->
-    <h6 class="mb-2">Recent Waste Records</h6>
-
-    <!-- Waste Card -->
-    {% for i in recent_waste %}
-    <div class="card mb-2">
-        <div class="card-body">
-            <p class="mb-1"><strong>Category:</strong> {{i.category}}</p>
-            <p class="mb-1"><strong>Quantity:</strong> {{i.quantity}}</p>
-            <p class="mb-1"><strong>Generated:</strong>{{i.created_at | to_ist | datetime_format('%Y-%m-%d  %I:%M:%p')}}</p>
-            <span class="badge
-            {% if i.status == 'pending' %}
-                bg-warning text-dark
-            {% elif i.status == 'collected' %}
-                bg-info text-dark
-            {% elif i.status == 'disposed' %}
-                bg-success
-            {% else %}
-                bg-secondary
-            {% endif %}
-            ">
-                {{ i.status|capitalize }}
-            </span>
-            {% if i.status == "pending"%}
-            <button class="btn btn-sm btn-outline-secondary ms-2"
-                    onclick="openWasteQRCode('{{ i.id }}','{{ i.category }}', '{{ i.quantity }}')">
-                <i class="fa-solid fa-qrcode"></i>
-            </button>
-            {% endif %}
-
-        </div>
-    </div>
-    {% endfor %}
-    
 </div>
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 
+<!-- Compliance Modal -->
+<div class="modal fade" id="complianceModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-primary text-white border-0 py-3">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-clipboard-check me-2"></i> Compliance Audit Details</h5>
+                <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <ul class="list-group list-group-flush mb-0">
+                    <li class="list-group-item px-0 py-3 border-light"><i class="fa-solid fa-check-circle text-success fs-5 me-2"></i> <strong>Handover Timeliness:</strong> Waste handed over within 48h limit</li>
+                    <li class="list-group-item px-0 py-3 border-light"><i class="fa-solid fa-check-circle text-success fs-5 me-2"></i> <strong>Collector Verification:</strong> Only authorized transport agencies assigned</li>
+                    <li class="list-group-item px-0 py-3 border-light"><i class="fa-solid fa-check-circle text-success fs-5 me-2"></i> <strong>Disposal Audit:</strong> 100% confirmation logs received</li>
+                    <li class="list-group-item px-0 py-3 border-light"><i class="fa-solid fa-triangle-exclamation text-warning fs-5 me-2"></i> <strong>Storage Limit:</strong> Bay A duration at 75% threshold</li>
+                </ul>
+            </div>
+            <div class="modal-footer border-0 pt-0">
+                <button class="btn btn-light w-100 text-primary fw-bold" data-bs-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- QR Modal -->
+<div class="modal fade" id="qrModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4 text-center">
+            <div class="modal-header border-0 pb-0 justify-content-end">
+                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-0 pb-4">
+                <h5 class="fw-bold mb-3 text-dark">Facility QR Code</h5>
+                <div class="p-3 bg-light rounded-3 d-inline-block mb-3">
+                    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=FACILITY:{{ current_user.id }}"
+                        alt="Facility QR Code" class="img-fluid rounded">
+                </div>
+                <p class="mb-0 fw-bold text-dark">{{current_user.details.get('facility_name', 'Facility')}}</p>
+                <p class="text-muted small mb-0">{{current_user.details.get('registration_id', '')}}</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Waste QR Modal -->
+<div class="modal fade" id="wasteQrModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered modal-sm">
+        <div class="modal-content border-0 shadow-lg rounded-4 text-center">
+            <div class="modal-header border-0 pb-0 justify-content-end">
+                <button class="btn-close" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body pt-0 pb-4">
+                <h5 class="fw-bold mb-3 text-dark">Waste Batch QR Code</h5>
+                <div class="p-3 bg-light rounded-3 d-inline-block mb-3">
+                    <img id="wasteQrImage" class="img-fluid rounded" alt="Waste QR Code">
+                </div>
+                <div id="wasteQrDetails" class="small bg-light p-3 rounded-3 mb-3 text-start border"></div>
+                <button class="btn action-btn-primary w-100 fw-bold py-2" onclick="window.print()">
+                    <i class="fa-solid fa-print me-2"></i> Print Label
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_scripts %}
 <script>
-const submitWasteBtn = document.getElementById("submitWasteBtn");
-const generateWasteModal = document.getElementById("generateWasteModal");
-const wasteQrModal = document.getElementById("wasteQrModal");
+    const submitWasteBtn = document.getElementById("submitWasteBtn");
+    const generateWasteModal = document.getElementById("generateWasteModal");
+    const wasteQrModal = document.getElementById("wasteQrModal");
 
-// QR modal elements
-const qrImage = document.getElementById("wasteQrImage");
-const qrDetails = document.getElementById("wasteQrDetails");
+    const qrImage = document.getElementById("wasteQrImage");
+    const qrDetails = document.getElementById("wasteQrDetails");
 
-submitWasteBtn.addEventListener("click", async () => {
+    if (submitWasteBtn) {
+        submitWasteBtn.addEventListener("click", async () => {
+            const category = document.getElementById("wasteCategory").value;
+            const quantity = document.getElementById("wasteQuantity").value;
+            const storage = document.getElementById("storageLocation").value;
 
-    const category = document.getElementById("wasteCategory").value;
-    const quantity = document.getElementById("wasteQuantity").value;
-    const storage = document.getElementById("storageLocation").value;
+            if (!category || !quantity || !storage) {
+                alert("All fields are required");
+                return;
+            }
 
-    if (!category || !quantity || !storage) {
-        alert("All fields are required");
-        return;
-    }
+            submitWasteBtn.disabled = true;
+            submitWasteBtn.innerText = "Processing...";
 
-    submitWasteBtn.disabled = true;
-    submitWasteBtn.innerText = "Generating QR...";
+            try {
+                const res = await fetch("/facility/api/generate_waste", {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json"
+                    },
+                    body: JSON.stringify({
+                        category: category,
+                        quantity: quantity,
+                        storage_location: storage
+                    })
+                });
 
-    try {
-        const res = await fetch("/facility/api/generate_waste", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-                category: category,
-                quantity: quantity,
-                storage_location: storage
-            })
+                const data = await res.json();
+
+                if (!data.success) {
+                    alert(data.message || "Failed to generate waste");
+                    return;
+                }
+
+                bootstrap.Modal.getInstance(generateWasteModal).hide();
+
+                const qrPayload = `WASTE:${data.waste_id}`;
+                qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrPayload)}`;
+                qrDetails.innerHTML = `
+                <div class="mb-1"><span class="text-muted">Batch ID:</span> <span class="fw-bold">${data.waste_id}</span></div>
+                <div class="mb-1"><span class="text-muted">Category:</span> <span class="fw-bold text-success">${data.category}</span></div>
+                <div><span class="text-muted">Quantity:</span> <span class="fw-bold">${data.quantity} kg</span></div>
+                `;
+
+                setTimeout(() => {
+                    new bootstrap.Modal(wasteQrModal).show();
+                }, 300);
+
+                if (wasteQrModal) {
+                    wasteQrModal.addEventListener('hidden.bs.modal', () => {
+                        window.location.reload();
+                    });
+                }
+
+            } catch (err) {
+                console.log(err);
+                alert("Something went wrong");
+            } finally {
+                submitWasteBtn.disabled = false;
+                submitWasteBtn.innerText = "Register Batch & Generate QR";
+            }
         });
-
-        const data = await res.json();
-
-        if (!data.success) {
-            alert("Failed to generate waste");
-            return;
-        }
-
-        // 1️⃣ Close generate modal
-        bootstrap.Modal.getInstance(generateWasteModal).hide();
-
-        // 2️⃣ Populate QR modal dynamically
-        const qrPayload = `WASTE:${data.waste_id}`;
-
-        qrImage.src =
-            `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrPayload)}`;
-
-        qrDetails.innerHTML = `
-            <p><strong>Waste ID:</strong> ${data.waste_id}</p>
-            <p><strong>Category:</strong> ${data.category}</p>
-            <p><strong>Quantity:</strong> ${data.quantity} kg</p>
-        `;
-
-        // 3️⃣ Open QR modal
-        setTimeout(() => {
-            new bootstrap.Modal(wasteQrModal).show();
-        }, 300);
-
-
-    } catch (err) {
-        alert("Something went wrong");
-    } finally {
-        submitWasteBtn.disabled = false;
-        submitWasteBtn.innerText = "Submit Waste";
     }
-});
 
-function openWasteQRCode(id,category,quantity)
-{
-
-        // 2️⃣ Populate QR modal dynamically
+    function openWasteQRCode(id, category, quantity) {
         const qrPayload = `WASTE:${id}`;
-
-        qrImage.src =
-            `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrPayload)}`;
-
+        qrImage.src = `https://api.qrserver.com/v1/create-qr-code/?size=220x220&data=${encodeURIComponent(qrPayload)}`;
         qrDetails.innerHTML = `
-            <p><strong>Waste ID:</strong> ${id}</p>
-            <p><strong>Category:</strong> ${category}</p>
-            <p><strong>Quantity:</strong> ${quantity} kg</p>
+        <div class="mb-1"><span class="text-muted">Batch ID:</span> <span class="fw-bold">${id}</span></div>
+        <div class="mb-1"><span class="text-muted">Category:</span> <span class="fw-bold text-success">${category}</span></div>
+        <div><span class="text-muted">Quantity:</span> <span class="fw-bold">${quantity} kg</span></div>
         `;
         new bootstrap.Modal(wasteQrModal).show();
-}
-
+    }
 </script>
-
-
-</body>
-</html>
+{% endblock %}

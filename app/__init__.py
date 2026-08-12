@@ -59,10 +59,11 @@ def create_app():
     @app.errorhandler(404)
     def page_not_found(e):
         if current_user.is_authenticated:
-            # Logged in → show 404 page with breadcrumbs
-            return 404
+            # Logged in → show 404 page
+            return "404 Page Not Found", 404
         else:
             # Not logged in → flash and redirect
-            return redirect(url_for("auth.login"))  # change to your login route name
+            return redirect(url_for("auth.login"))
+
 
     return app

@@ -1,101 +1,86 @@
-<!DOCTYPE html>
-<html>
-<head>
-    <title>Facility Profile Setup | CivicBio</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
+{% extends "base.html" %}
+{% block title %}Facility Profile Setup | CivicCycle{% endblock %}
 
-<body class="bg-light">
+{% block sidebar_nav %}
+<a href="{{ url_for('facility.dashboard') }}" class="nav-link"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+<a href="{{ url_for('facility.profile_setup') }}" class="nav-link active"><i class="fa-solid fa-building"></i> Profile</a>
+{% endblock %}
 
-<div class="container my-4">
-    <div class="card">
-        <div class="card-body">
+{% block breadcrumb %}Profile Setup{% endblock %}
 
-            <h5 class="mb-3">Facility Profile Setup</h5>
-
-            <form method="POST">
-
-                <div class="mb-3">
-                    <label class="form-label">Facility Name</label>
-                    <input type="text" class="form-control" name="facility_name" required value="{{current_user.details.facility_name}}">
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Facility Type</label>
-                    <select class="form-select" name="facility_type" required>
-                        <option {% if current_user.details.facility_type == "Hospital" %} selected {% endif %}>Hospital </option>
-                        <option {% if current_user.details.facility_type == "Clinic" %} selected {% endif %} >Clinic</option>
-                        <option {% if current_user.details.facility_type == "Diagnostic Lab" %} selected {% endif %} >Diagnostic Lab</option>
-                        <option {% if current_user.details.facility_type == "Medical College" %} selected {% endif %} >Medical College</option>
-                    </select>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">BMW Registration ID</label>
-                    <input type="text" class="form-control" name="registration_id" required value="{{current_user.details.registration_id}}">
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">License Number</label>
-                    <input type="text" class="form-control" name="license_no" required value="{{current_user.details.license_no}}">
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Address</label>
-                    <textarea class="form-control" name="address" rows="2" required>{{current_user.details.address}}</textarea>
-                </div>
-
-                <div class="row">
-                    <div class="col-6 mb-3">
-                        <label class="form-label">City</label>
-                        <input type="text" class="form-control" name="city" value="{{current_user.details.city}}">
+{% block content %}
+<div class="row justify-content-center">
+    <div class="col-lg-8">
+        <div class="civic-card">
+            <div class="card-body p-4">
+                <h5 class="mb-3">Facility Profile Setup</h5>
+                <form method="POST">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Facility Name</label>
+                        <input type="text" class="form-control bg-light" name="facility_name" required value="{{current_user.details.facility_name}}">
                     </div>
-                    <div class="col-6 mb-3">
-                        <label class="form-label">State</label>
-                        <input type="text" class="form-control" name="state" value="{{current_user.details.state}}">
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Facility Type</label>
+                        <select class="form-select bg-light" name="facility_type" required>
+                            <option {% if current_user.details.facility_type == "Hospital" %} selected {% endif %}>Hospital</option>
+                            <option {% if current_user.details.facility_type == "Clinic" %} selected {% endif %}>Clinic</option>
+                            <option {% if current_user.details.facility_type == "Diagnostic Lab" %} selected {% endif %}>Diagnostic Lab</option>
+                            <option {% if current_user.details.facility_type == "Medical College" %} selected {% endif %}>Medical College</option>
+                        </select>
                     </div>
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Pincode</label>
-                    <input type="text" class="form-control" name="pincode"  value="{{current_user.details.pincode}}">
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Max Daily Waste Capacity (kg)</label>
-                    <input type="number" class="form-control" name="max_capacity" value="{{current_user.details.max_capacity}}">
-                </div>
-
-                <div class="mb-3">
-                    <label class="form-label">Authorized Waste Categories</label>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="waste_categories" value="yellow" {% if "yellow" in current_user.details.waste_categories%} checked {%endif%}>
-                        <label class="form-check-label">Yellow</label>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">BMW Registration ID</label>
+                        <input type="text" class="form-control bg-light" name="registration_id" required value="{{current_user.details.registration_id}}">
                     </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="waste_categories" value="red" {% if "red" in current_user.details.waste_categories%} checked {%endif%}>
-                        <label class="form-check-label">Red</label>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">License Number</label>
+                        <input type="text" class="form-control bg-light" name="license_no" required value="{{current_user.details.license_no}}">
                     </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="waste_categories" value="blue" {% if "blue" in current_user.details.waste_categories%} checked {%endif%}>
-                        <label class="form-check-label">Blue</label>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Address</label>
+                        <textarea class="form-control bg-light" name="address" rows="2" required>{{current_user.details.address}}</textarea>
                     </div>
-                    <div class="form-check">
-                        <input class="form-check-input" type="checkbox" name="waste_categories" value="white" {% if "white" in current_user.details.waste_categories%} checked {%endif%}>
-                        <label class="form-check-label">White</label>
+                    <div class="row">
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-medium">City</label>
+                            <input type="text" class="form-control bg-light" name="city" value="{{current_user.details.city}}">
+                        </div>
+                        <div class="col-6 mb-3">
+                            <label class="form-label fw-medium">State</label>
+                            <input type="text" class="form-control bg-light" name="state" value="{{current_user.details.state}}">
+                        </div>
                     </div>
-                </div>
-
-                <button class="btn btn-success w-100">
-                    Save Profile
-                </button>
-
-            </form>
-
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Pincode</label>
+                        <input type="text" class="form-control bg-light" name="pincode" value="{{current_user.details.pincode}}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Max Daily Waste Capacity (kg)</label>
+                        <input type="number" class="form-control bg-light" name="max_capacity" value="{{current_user.details.max_capacity}}">
+                    </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-medium">Authorized Waste Categories</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="waste_categories" value="yellow" {% if "yellow" in current_user.details.waste_categories%} checked {%endif%}>
+                            <label class="form-check-label">Yellow</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="waste_categories" value="red" {% if "red" in current_user.details.waste_categories%} checked {%endif%}>
+                            <label class="form-check-label">Red</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="waste_categories" value="blue" {% if "blue" in current_user.details.waste_categories%} checked {%endif%}>
+                            <label class="form-check-label">Blue</label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" name="waste_categories" value="white" {% if "white" in current_user.details.waste_categories%} checked {%endif%}>
+                            <label class="form-check-label">White</label>
+                        </div>
+                    </div>
+                    <button class="btn btn-success w-100 py-2 fw-semibold">Save Profile</button>
+                </form>
+            </div>
         </div>
     </div>
 </div>
-
-</body>
-</html>
+{% endblock %}

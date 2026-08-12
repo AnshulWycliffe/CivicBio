@@ -1,350 +1,285 @@
-<!DOCTYPE html>
-<html lang="en">
+{% extends "base.html" %}
+{% block title %}Disposal Dashboard | CivicCycle{% endblock %}
 
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Disposal Dashboard | CivicBio</title>
+{% block sidebar_nav %}
+<a href="{{ url_for('disposal.dashboard') }}" class="nav-link active"><i class="fa-solid fa-chart-pie"></i> Dashboard</a>
+<a href="{{ url_for('disposal.profile_setup') }}" class="nav-link"><i class="fa-solid fa-id-badge"></i> Profile</a>
+{% endblock %}
 
-  <!-- Bootstrap CSS -->
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
-  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css"
-    integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw=="
-    crossorigin="anonymous" referrerpolicy="no-referrer" />
+{% block breadcrumb %}Disposal Dashboard{% endblock %}
 
-</head>
-
-<body class="bg-light">
-
-  <!-- Header -->
-  <nav class="navbar navbar-dark bg-success sticky-top">
-    <div class="container-fluid">
-      <span class="navbar-brand mb-0 h6">CivicBio · Disposal Unit</span>
-      <button class="btn btn-sm btn-outline-light"
-                data-bs-toggle="modal"
-                data-bs-target="#disposalProfileModal">
-            <i class="fas fa-id-badge"></i>
-        </button>
-      <a class="btn btn-sm btn-outline-light" href="/auth/logout">Logout</a>
-    </div>
-  </nav>
-
-  <!-- Disposal Profile Modal -->
-<div class="modal fade" id="disposalProfileModal" tabindex="-1">
-  <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
-    <div class="modal-content">
-
-      <!-- Header -->
-      <div class="modal-header bg-success text-white">
-        <h5 class="modal-title">Disposal Unit Profile</h5>
-        <button type="button"
-                class="btn-close btn-close-white"
-                data-bs-dismiss="modal"></button>
-      </div>
-
-      <!-- Body -->
-      <div class="modal-body">
-
-        <!-- Unit Info -->
-        <h6 class="mb-2">Unit Details</h6>
-        <p class="mb-1">
-            <strong>Unit Name:</strong>
-            {{ current_user.details.unit_name }}
-        </p>
-        <p class="mb-1">
-            <strong>Facility Type:</strong>
-            {{ current_user.details.facility_type }}
-        </p>
-
-        <hr>
-
-        <!-- License -->
-        <h6 class="mb-2">License & Approval</h6>
-        <p class="mb-1">
-            <strong>License No:</strong>
-            {{ current_user.details.license_no }}
-        </p>
-        <p class="mb-1">
-            <strong>Status:</strong>
-            {% if current_user.status == "ACTIVE" %}
-                <span class="badge bg-success">Approved</span>
-            {% else %}
-                <span class="badge bg-warning text-dark">Pending Approval</span>
-            {% endif %}
-        </p>
-
-        <hr>
-
-        <!-- Disposal Methods -->
-        <h6 class="mb-2">Authorized Disposal Methods</h6>
-        <div class="d-flex flex-wrap gap-2 mb-3">
-            {% for m in current_user.details.methods %}
-                <span class="badge bg-secondary">{{ m }}</span>
-            {% endfor %}
+{% block content %}
+<div class="container-fluid">
+    <!-- Hero Banner -->
+    <div class="dashboard-hero d-flex align-items-center justify-content-between">
+        <div>
+            <h3 class="fw-bold mb-1">Welcome back, {{ current_user.details.get('unit_name', 'Disposal Facility') }}</h3>
+            <p class="mb-0 text-white-50 small"><i class="fa-solid fa-recycle me-1"></i> {{ current_user.details.get('facility_type', 'CBWTF Plant') }} • License: {{ current_user.details.get('license_no', 'N/A') }}</p>
         </div>
-
-        <hr>
-
-        <!-- Capacity -->
-        <h6 class="mb-2">Operational Capacity</h6>
-        <p class="mb-1">
-            <strong>Max Capacity:</strong>
-            {{ current_user.details.capacity_per_day }} kg/day
-        </p>
-        <p class="mb-1">
-            <strong>Operating Area:</strong>
-            {{ current_user.details.operating_area }}
-        </p>
-
-        <hr>
-
-        <!-- Contact -->
-        <h6 class="mb-2">Contact Information</h6>
-        <p class="mb-1">
-            <strong>Contact Person:</strong>
-            {{ current_user.details.contact_person }}
-        </p>
-        <p class="mb-1">
-            <strong>Contact Number:</strong>
-            {{ current_user.details.contact_number }}
-        </p>
-
-      </div>
-
-      <!-- Footer -->
-      
-
+        <div class="d-none d-md-block">
+            <button class="btn btn-light fw-bold text-success shadow-sm px-3 py-2" data-bs-toggle="modal" data-bs-target="#qrScannerModal">
+                <i class="fa-solid fa-qrcode me-1"></i> Scan Waste QR
+            </button>
+        </div>
     </div>
-  </div>
+
+    <!-- Summary KPI Stat Cards -->
+    <div class="row g-4 mb-4">
+        <div class="col-md-6 col-xl-3">
+            <div class="civic-card">
+                <div class="stat-card">
+                    <div class="stat-icon icon-blue">
+                        <i class="fa-solid fa-truck-ramp-box"></i>
+                    </div>
+                    <div>
+                        <div class="stat-label">Assigned Today</div>
+                        <div class="stat-value" id="assignedCount">{{ assigned_today }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="civic-card">
+                <div class="stat-card">
+                    <div class="stat-icon icon-emerald">
+                        <i class="fa-solid fa-fire-burner"></i>
+                    </div>
+                    <div>
+                        <div class="stat-label">Disposed Today</div>
+                        <div class="stat-value"><span id="disposedKg">{{ disposed_today_kg }}</span> <span class="fs-6 text-muted fw-normal">kg</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="civic-card">
+                <div class="stat-card">
+                    <div class="stat-icon icon-purple">
+                        <i class="fa-solid fa-gauge-high"></i>
+                    </div>
+                    <div>
+                        <div class="stat-label">Max Capacity</div>
+                        <div class="stat-value">{{ current_user.details.get('capacity_per_day', 0) }} <span class="fs-6 text-muted fw-normal">kg/day</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6 col-xl-3">
+            <div class="civic-card">
+                <div class="stat-card">
+                    <div class="stat-icon icon-amber">
+                        <i class="fa-solid fa-circle-check"></i>
+                    </div>
+                    <div>
+                        <div class="stat-label">Unit Status</div>
+                        <div class="mt-1">
+                            {% if current_user.status == "ACTIVE" %}
+                                <span class="status-badge bg-success"><i class="fa-solid fa-shield-check me-1"></i> Active</span>
+                            {% else %}
+                                <span class="status-badge bg-warning"><i class="fa-solid fa-clock me-1"></i> Pending</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scanner Action Hero Tile -->
+    <div class="civic-card mb-4 p-4 text-center bg-white border-0 shadow-sm rounded-4">
+        <div class="row align-items-center justify-content-center">
+            <div class="col-lg-8">
+                <div class="d-inline-flex align-items-center justify-content-center p-3 bg-success-subtle text-success rounded-circle mb-3">
+                    <i class="fa-solid fa-camera fs-2"></i>
+                </div>
+                <h5 class="fw-bold mb-2">Received Incoming Waste Batch?</h5>
+                <p class="text-muted small mb-3">Scan the waste QR code attached to the container to verify details and record disposal method.</p>
+                <button class="btn action-btn-primary py-2.5 px-4 rounded-3 fw-bold" data-bs-toggle="modal" data-bs-target="#qrScannerModal">
+                    <i class="fa-solid fa-camera me-2"></i> Scan Incoming Waste QR
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Disposed Waste Log -->
+    <div class="d-flex align-items-center justify-content-between mb-3">
+        <h5 class="fw-bold text-dark mb-0"><i class="fa-solid fa-list-check me-2 text-success"></i> Disposed Waste Batches</h5>
+        <span class="badge bg-light text-secondary border px-3 py-2">{{ disposed_waste|length }} Batches Disposed</span>
+    </div>
+
+    <div class="civic-card p-4">
+        <div class="table-responsive">
+            <table class="table table-custom align-middle mb-0">
+                <thead>
+                    <tr>
+                        <th>Facility Source</th>
+                        <th>Category</th>
+                        <th>Quantity</th>
+                        <th>Disposal Method</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for w in disposed_waste %}
+                    <tr>
+                        <td>
+                            <div class="fw-bold text-dark">{{ w.facility_id.details.get('facility_name', 'Facility') }}</div>
+                            <small class="text-muted"><i class="fa-solid fa-building me-1"></i> {{ w.facility_id.details.get('city', '') }}</small>
+                        </td>
+                        <td><span class="fw-bold text-success">{{ w.category }}</span></td>
+                        <td><span class="fw-bold">{{ w.quantity }}</span> <span class="small text-muted">kg</span></td>
+                        <td><span class="badge bg-light text-dark border px-2.5 py-1.5"><i class="fa-solid fa-gears me-1"></i> {{ w.disposal_method or 'Incineration' }}</span></td>
+                        <td><span class="status-badge bg-success"><i class="fa-solid fa-check me-1"></i> Disposed</span></td>
+                    </tr>
+                    {% endfor %}
+                    {% if not disposed_waste %}
+                    <tr>
+                        <td colspan="5" class="text-center py-5 text-muted">
+                            <i class="fa-solid fa-box-open fs-1 text-light-emphasis mb-2"></i>
+                            <p class="mb-0 fw-medium">No waste batches disposed yet today.</p>
+                            <small class="text-muted">Use the scanner above to verify incoming waste.</small>
+                        </td>
+                    </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
 </div>
 
-  <!-- Main Container -->
-  <div class="container my-3">
-    <div class="row g-2 my-3">
-      <div class="col-6">
-        <div class="card text-center">
-          <div class="card-body">
-            <h6 class="text-muted">Assigned Today</h6>
-            <h4 id="assignedCount">{{assigned_today}}</h4>
-          </div>
+<!-- Modals -->
+<!-- QR Scanner Modal -->
+<div class="modal fade" id="qrScannerModal" tabindex="-1">
+    <div class="modal-dialog modal-fullscreen">
+        <div class="modal-content bg-black">
+            <div class="modal-header bg-dark text-white border-0">
+                <h6 class="modal-title fw-bold"><i class="fa-solid fa-camera me-2"></i> Align Waste QR Code inside Frame</h6>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-0 d-flex align-items-center justify-content-center position-relative">
+                <video id="video" autoplay playsinline style="width:100%;height:100%;object-fit:cover;"></video>
+                <canvas id="canvas" hidden></canvas>
+            </div>
+            <div class="modal-footer bg-dark border-0 justify-content-center">
+                <span id="scanStatus" class="text-white-50 small"><i class="fa-solid fa-spinner fa-spin me-2"></i> Scanning for Waste QR...</span>
+            </div>
         </div>
-      </div>
+    </div>
+</div>
 
-      <div class="col-6">
-        <div class="card text-center">
-          <div class="card-body">
-            <h6 class="text-muted">Disposed Today</h6>
-            <h4><span id="disposedKg">{{disposed_today_kg}}</span> kg</h4>
-          </div>
+<!-- Waste Detail Modal -->
+<div class="modal fade" id="wasteDetailModal" tabindex="-1">
+    <div class="modal-dialog modal-dialog-centered">
+        <div class="modal-content border-0 shadow-lg rounded-4">
+            <div class="modal-header bg-success text-white border-0 py-3">
+                <h5 class="modal-title fw-bold"><i class="fa-solid fa-clipboard-check me-2"></i> Waste Batch Details</h5>
+                <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
+            </div>
+            <div class="modal-body p-4">
+                <div class="bg-light p-3 rounded-3 mb-3 border">
+                    <p class="mb-1"><strong>Facility:</strong> <span id="wdFacility"></span></p>
+                    <p class="mb-1"><strong>Category:</strong> <span id="wdCategory" class="fw-bold text-success"></span></p>
+                    <p class="mb-1"><strong>Quantity:</strong> <span id="wdQuantity" class="fw-bold"></span> kg</p>
+                    <p class="mb-0"><strong>Collector Agency:</strong> <span id="wdCollector"></span></p>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label fw-semibold">Select Authorized Disposal Method</label>
+                    <select class="form-select bg-light border-0 py-2.5" id="disposalMethod">
+                        <option disabled selected>Select method</option>
+                        <option value="Incineration">Incineration</option>
+                        <option value="Autoclaving">Autoclaving</option>
+                        <option value="Chemical Treatment">Chemical Treatment</option>
+                        <option value="Secure Landfill">Secure Landfill</option>
+                    </select>
+                </div>
+            </div>
+            <div class="modal-footer border-0 p-4 pt-0">
+                <button class="btn action-btn-primary w-100 py-2.5 fw-bold" onclick="markDisposed()">
+                    ♻️ Confirm & Mark as Disposed
+                </button>
+            </div>
         </div>
-      </div>
     </div>
+</div>
+{% endblock %}
 
-    <div class="card mb-2">
-      <div class="card-body text-center">
-        <h6 class="mb-2">Verify Waste Batch</h6>
-        <button class="btn btn-success w-100" data-bs-toggle="modal" data-bs-target="#qrScannerModal">
-          <i class="fas fa-camera"></i> Scan Waste QR
-        </button>
-        <small class="text-muted d-block mt-2">
-          Scan QR before disposal
-        </small>
-      </div>
-    </div>
-
-    <div class="modal fade" id="qrScannerModal" tabindex="-1">
-      <div class="modal-dialog modal-fullscreen">
-        <div class="modal-content">
-
-          <div class="modal-header bg-dark text-white">
-            <h6 class="modal-title">Scan Facility QR</h6>
-            <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-
-          <div class="modal-body p-0">
-            <video id="video" autoplay playsinline style="width:100%;height:100%;object-fit:cover;"></video>
-            <canvas id="canvas" hidden></canvas>
-          </div>
-
-          <div class="modal-footer">
-            <span id="scanStatus" class="text-muted">
-              Align QR inside camera frame
-            </span>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-    <div class="modal fade" id="wasteDetailModal" tabindex="-1">
-      <div class="modal-dialog modal-dialog-centered modal-fullscreen-sm-down">
-        <div class="modal-content">
-
-          <div class="modal-header bg-success text-white">
-            <h5 class="modal-title">Waste Batch Details</h5>
-            <button class="btn-close btn-close-white" data-bs-dismiss="modal"></button>
-          </div>
-
-          <div class="modal-body">
-
-            <p><strong>Facility:</strong> <span id="wdFacility"></span></p>
-            <p><strong>Category:</strong> <span id="wdCategory"></span></p>
-            <p><strong>Quantity:</strong> <span id="wdQuantity"></span> kg</p>
-            <p><strong>Collected By:</strong> <span id="wdCollector"></span></p>
-
-            <hr>
-
-            <label class="form-label">Disposal Method</label>
-            <select class="form-select" id="disposalMethod">
-              <option disabled selected>Select method</option>
-              <option>Incineration</option>
-              <option>Autoclaving</option>
-              <option>Chemical Treatment</option>
-              <option>Secure Landfill</option>
-            </select>
-
-          </div>
-
-          <div class="modal-footer">
-            <button class="btn btn-success" onclick="markDisposed()">
-              ♻️ Mark as Disposed
-            </button>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-    <h6 class="mt-4">Disposed Waste</h6>
-
-    {% for w in disposed_waste %}
-    <div class="card mb-2">
-      <div class="card-body">
-        <p class="mb-1"><strong>Facility:</strong> {{ w.facility_id.details.facility_name }}</p>
-        <p class="mb-1"><strong>Category:</strong> {{ w.category }}</p>
-        <p class="mb-1"><strong>Quantity:</strong> {{ w.quantity }} kg</p>
-        <span class="badge bg-success">Disposed</span>
-      </div>
-    </div>
-    {% endfor %}
-
-  </div>
-
-</body>
-
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+{% block extra_scripts %}
 <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.js"></script>
-
 <script>
-  let videoStream;
-  let scanning = false;
+let videoStream;
+let scanning = false;
+const qrModal = document.getElementById("qrScannerModal");
 
-  const qrModal = document.getElementById("qrScannerModal");
-
-  qrModal.addEventListener("shown.bs.modal", async () => {
+qrModal.addEventListener("shown.bs.modal", async () => {
     try {
-      const video = document.getElementById("video");
-
-      videoStream = await navigator.mediaDevices.getUserMedia({
-        video: { facingMode: "environment" }
-      });
-
-      video.srcObject = videoStream;
-      scanning = true;
-      requestAnimationFrame(scanQR);
-
+        const video = document.getElementById("video");
+        videoStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment" }
+        });
+        video.srcObject = videoStream;
+        scanning = true;
+        requestAnimationFrame(scanQR);
     } catch (err) {
-      alert("Camera error: " + err.message);
+        alert("Camera access error: " + err.message);
     }
-  });
+});
 
-  qrModal.addEventListener("hidden.bs.modal", stopCamera);
+qrModal.addEventListener("hidden.bs.modal", stopCamera);
 
-  function scanQR() {
+function scanQR() {
     if (!scanning) return;
-
     const video = document.getElementById("video");
     const canvas = document.getElementById("canvas");
     const ctx = canvas.getContext("2d");
 
     if (video.readyState === video.HAVE_ENOUGH_DATA) {
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
-      ctx.drawImage(video, 0, 0);
+        canvas.width = video.videoWidth;
+        canvas.height = video.videoHeight;
+        ctx.drawImage(video, 0, 0);
+        const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        const qr = jsQR(img.data, img.width, img.height);
 
-      const img = ctx.getImageData(0, 0, canvas.width, canvas.height);
-      const qr = jsQR(img.data, img.width, img.height);
+        if (qr) {
+            const qrData = qr.data;
+            if (!qrData.startsWith("WASTE:")) { alert("Invalid Waste QR Code"); stopCamera(); return; }
+            const wasteId = qrData.split(":")[1];
 
-      if (qr) {
-        const qrData = qr.data;
-
-        if (!qrData.startsWith("WASTE:")) {
-          alert("Invalid Waste QR");
-          stopCamera();
-          return;
+            fetch(`/disposal/api/verify_waste/${wasteId}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (!data.success) { alert(data.message); return; }
+                    document.getElementById("wdFacility").innerText = data.waste.facility;
+                    document.getElementById("wdCategory").innerText = data.waste.category;
+                    document.getElementById("wdQuantity").innerText = data.waste.quantity;
+                    document.getElementById("wdCollector").innerText = data.waste.agency_name;
+                    window.currentWasteId = data.waste.id;
+                    bootstrap.Modal.getInstance(qrModal).hide();
+                    new bootstrap.Modal(document.getElementById("wasteDetailModal")).show();
+                });
+            stopCamera();
         }
-
-        const wasteId = qrData.split(":")[1];
-
-        fetch(`/disposal/api/verify_waste/${wasteId}`)
-          .then(res => res.json())
-          .then(data => {
-            if (!data.success) {
-              alert(data.message);
-              return;
-            }
-
-            // Fill modal
-            document.getElementById("wdFacility").innerText = data.waste.facility;
-            document.getElementById("wdCategory").innerText = data.waste.category;
-            document.getElementById("wdQuantity").innerText = data.waste.quantity;
-            document.getElementById("wdCollector").innerText = data.waste.agency_name;
-
-            window.currentWasteId = data.waste.id;
-
-            bootstrap.Modal.getInstance(qrModal).hide();
-            new bootstrap.Modal(
-              document.getElementById("wasteDetailModal")
-            ).show();
-          });
-
-        stopCamera();
-      }
-
     }
     requestAnimationFrame(scanQR);
-  }
+}
 
-  function markDisposed() {
+function markDisposed() {
     const method = document.getElementById("disposalMethod").value;
-
-    if (!method) {
-      alert("Select disposal method");
-      return;
-    }
+    if (!method) { alert("Select disposal method"); return; }
 
     fetch(`/disposal/api/mark_disposed/${window.currentWasteId}`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ method })
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ method })
     })
-      .then(res => res.json())
-      .then(data => {
-        if (data.success) {
-          alert("Waste marked as disposed");
-          location.reload();
-        }
-      });
-  }
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) { alert("Waste marked as disposed successfully"); location.reload(); }
+    });
+}
 
-  function stopCamera() {
+function stopCamera() {
     scanning = false;
-    if (videoStream) {
-      videoStream.getTracks().forEach(t => t.stop());
-      videoStream = null;
-    }
-  }
+    if (videoStream) { videoStream.getTracks().forEach(t => t.stop()); videoStream = null; }
+}
 </script>
-
-
-</html>
+{% endblock %}

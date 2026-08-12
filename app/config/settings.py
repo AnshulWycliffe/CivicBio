@@ -8,9 +8,9 @@ class BaseConfig:
     MONGO_USERNAME = os.getenv("MONGO_USERNAME")
     MONGO_PASSWORD = os.getenv("MONGO_PASSWORD")
 
-    SUPABASE_URL = os.getenv("SUPABASE_URL")
-    SUPABASE_KEY = os.getenv("SUPABASE_KEY")
-    SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET")
+    # SUPABASE_URL = os.getenv("SUPABASE_URL")
+    # SUPABASE_KEY = os.getenv("SUPABASE_KEY")
+    # SUPABASE_BUCKET = os.getenv("SUPABASE_BUCKET")
 
     SESSION_PERMANENT = False
     SESSION_TYPE = "filesystem"
